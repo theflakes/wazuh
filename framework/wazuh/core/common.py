@@ -7,12 +7,15 @@ import os
 import subprocess
 from contextvars import ContextVar
 from copy import deepcopy
+from functools import lru_cache
 from functools import wraps
 from grp import getgrnam
 from pwd import getpwnam
 from typing import Dict, Any
-from copy import deepcopy
-from functools import lru_cache
+
+import yaml
+
+from api import __path__ as api_path
 
 try:
     here = os.path.abspath(os.path.dirname(__file__))
@@ -25,6 +28,10 @@ except (FileNotFoundError, PermissionError):
         'wazuh_version': ''
     }
 
+@lru_cache(maxsize=None)
+def load_spec():
+    with open(os.path.join(api_path[0], 'spec', 'spec.yaml'), 'r', encoding='utf-8') as stream:
+        return yaml.safe_load(stream)
 
 @lru_cache(maxsize=None)
 def find_wazuh_path():
@@ -138,7 +145,6 @@ AUTHD_SOCKET = os.path.join(ossec_path, 'queue', 'ossec', 'auth')
 REQUEST_SOCKET = os.path.join(ossec_path, 'queue', 'ossec', 'request')
 LOGTEST_SOCKET = os.path.join(ossec_path, 'queue', 'ossec', 'logtest')
 UPGRADE_SOCKET = os.path.join(ossec_path, 'queue', 'tasks', 'upgrade')
-
 TASKS_SOCKET = os.path.join(ossec_path, 'queue', 'tasks', 'task')
 
 # Wdb
