@@ -84,6 +84,18 @@ class ResourceType(Enum):
     DEFAULT = 'default'
 
 
+def transform_enum(value):
+    if isinstance(value, ResourceType):
+        return value
+    else:
+        try:
+            enum = ResourceType(value)
+        except ValueError:
+            enum = ResourceType.USER
+
+        return enum
+
+
 class RolesRules(_Base):
     """
     Relational table between Roles and Policies, in this table are stored the relationship between the both entities
@@ -278,7 +290,7 @@ class User(_Base):
         self.password = password
         self.allow_run_as = allow_run_as
         self.created_at = created_at if created_at else datetime.utcnow()
-        self.resource_type = resource_type.value if resource_type else ResourceType.USER.value
+        self.resource_type = self.resource_type = transform_enum(resource_type).value
 
     def __repr__(self):
         return f"<User(user={self.username})"
@@ -346,7 +358,7 @@ class Roles(_Base):
         self.id = role_id
         self.name = name
         self.created_at = created_at if created_at else datetime.utcnow()
-        self.resource_type = resource_type.value if resource_type else ResourceType.USER.value
+        self.resource_type = transform_enum(resource_type).value
 
     def get_role(self):
         """Role's getter
@@ -402,7 +414,7 @@ class Rules(_Base):
         self.name = name
         self.rule = rule
         self.created_at = created_at if created_at else datetime.utcnow()
-        self.resource_type = resource_type.value if resource_type else ResourceType.USER.value
+        self.resource_type = self.resource_type = transform_enum(resource_type).value
 
     def get_rule(self):
         """Rule getter
@@ -454,7 +466,7 @@ class Policies(_Base):
         self.name = name
         self.policy = policy
         self.created_at = created_at if created_at else datetime.utcnow()
-        self.resource_type = resource_type.value if resource_type else ResourceType.USER.value
+        self.resource_type = self.resource_type = transform_enum(resource_type).value
 
     def get_policy(self):
         """Policy's getter
@@ -762,6 +774,8 @@ class AuthenticationManager:
             True if the user has been modify successfully. False otherwise
         """
         try:
+            if resource_type:
+                resource_type = transform_enum(resource_type)
             user = self.session.query(User).filter_by(id=user_id).first()
             if user is not None:
                 if resource_type is not None:
@@ -1090,6 +1104,8 @@ class RolesManager:
         True -> Success | Invalid rule | Name already in use | Role not exist
         """
         try:
+            if resource_type:
+                resource_type = transform_enum(resource_type)
             role_to_update = self.session.query(Roles).filter_by(id=role_id).first()
             if role_to_update and role_to_update is not None:
                 if role_to_update.id > max_id_reserved and (role_to_update.resource_type == ResourceType.USER.value or
@@ -1314,6 +1330,8 @@ class RulesManager:
         True -> Success | Invalid rule | Name already in use | Rule already in use | Rule not exists
         """
         try:
+            if resource_type:
+                resource_type = transform_enum(resource_type)
             rule_to_update = self.session.query(Rules).filter_by(id=rule_id).first()
             if rule_to_update and rule_to_update is not None:
                 if rule_to_update.id > max_id_reserved and (rule_to_update.resource_type == ResourceType.USER.value or
@@ -1566,6 +1584,8 @@ class PoliciesManager:
         True -> Success | False -> Failure | Invalid policy | Name already in use
         """
         try:
+            if resource_type:
+                resource_type = transform_enum(resource_type)
             policy_to_update = self.session.query(Policies).filter_by(id=policy_id).first()
             if policy_to_update and policy_to_update is not None:
                 if policy_to_update.id > max_id_reserved and (policy_to_update.resource_type == ResourceType.USER.value
