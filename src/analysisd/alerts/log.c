@@ -277,11 +277,11 @@ void OS_LogOutput(Eventinfo *lf)
             fprintf(_aflog, "\nWhat changed:\n%s\n", lf->fields[FIM_DIFF].value);
         }
 
-        if (lf->sk_tag) {
-            if (strcmp(lf->sk_tag, "") != 0) {
+        if (lf->fields[FIM_TAG].value) {
+            if (strcmp(lf->fields[FIM_TAG].value, "") != 0) {
                 printf("\nTags:\n");
                 char * tag;
-                tag = strtok_r(lf->sk_tag, ",", &saveptr);
+                tag = strtok_r(lf->fields[FIM_TAG].value, ",", &saveptr);
                 while (tag != NULL) {
                     printf(" - %s\n", tag);
                     tag = strtok_r(NULL, ",", &saveptr);
@@ -483,10 +483,10 @@ void OS_Log(Eventinfo *lf)
             fprintf(_aflog, "\nWhat changed:\n%s\n", lf->fields[FIM_DIFF].value);
         }
 
-        if (lf->sk_tag) {
-            if (strcmp(lf->sk_tag, "") != 0) {
+        if (lf->fields[FIM_TAG].value) {
+            if (strcmp(lf->fields[FIM_TAG].value, "") != 0) {
                 char * tags;
-                os_strdup(lf->sk_tag, tags);
+                os_strdup(lf->fields[FIM_TAG].value, tags);
                 fprintf(_aflog, "\nTags:\n");
                 char * tag;
                 tag = strtok_r(tags, ",", &saveptr);
