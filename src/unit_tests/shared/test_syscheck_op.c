@@ -1522,7 +1522,7 @@ static void test_sk_fill_event_full_event(void **state) {
 
     sk_fill_event(data->lf, data->f_name, data->sum);
 
-    assert_string_equal(data->lf->filename, "f_name");
+    assert_string_equal(data->lf->fields[FIM_FILE].value, "f_name");
     assert_string_equal(data->lf->fields[FIM_FILE].value, "f_name");
     assert_string_equal(data->lf->fields[FIM_SIZE].value, "size");
     assert_string_equal(data->lf->fields[FIM_PERM].value, "361100");
@@ -1562,7 +1562,6 @@ static void test_sk_fill_event_empty_event(void **state) {
 
     sk_fill_event(data->lf, data->f_name, data->sum);
 
-    assert_string_equal(data->lf->filename, "f_name");
     assert_string_equal(data->lf->fields[FIM_FILE].value, "f_name");
     assert_null(data->lf->fields[FIM_SIZE].value);
     assert_null(data->lf->fields[FIM_PERM].value);
@@ -1604,7 +1603,6 @@ static void test_sk_fill_event_win_perm(void **state) {
 
     sk_fill_event(data->lf, data->f_name, data->sum);
 
-    assert_string_equal(data->lf->filename, "f_name");
     assert_string_equal(data->lf->fields[FIM_FILE].value, "f_name");
     assert_null(data->lf->fields[FIM_SIZE].value);
     assert_string_equal(data->lf->fields[FIM_PERM].value, "win_perm");
