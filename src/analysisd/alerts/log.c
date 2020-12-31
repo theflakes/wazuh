@@ -186,7 +186,10 @@ void OS_LogOutput(Eventinfo *lf)
 
     /* FIM events */
 
-    if (lf->fields[FIM_FILE].value) {
+    if (lf->fields && lf->fields[FIM_FILE].value) {
+        long aux_time;
+        char *end = NULL;
+
         printf("Attributes:\n");
 
         if (lf->fields[FIM_SIZE].value && *lf->fields[FIM_SIZE].value) {
@@ -197,8 +200,11 @@ void OS_LogOutput(Eventinfo *lf)
             printf(" - Permissions: %s\n", lf->fields[FIM_PERM].value);
         }
 
-        if (lf->mtime_after) {
-            printf(" - Date: %s", ctime_r(&lf->mtime_after, buf_ptr));
+        if (lf->fields[FIM_MTIME].value && *lf->fields[FIM_MTIME].value) {
+            aux_time = strtol(lf->fields[FIM_MTIME].value, &end, 10);
+            if (aux_time > 0 || end == '\0') {
+                printf(" - Date: %s", ctime_r(&aux_time, buf_ptr));
+            }
         }
 
         if (lf->inode_after) {
@@ -399,6 +405,8 @@ void OS_Log(Eventinfo *lf)
 
     if (lf->fields[FIM_FILE].value) {
         fprintf(_aflog, "Attributes:\n");
+        long aux_time;
+        char *end = NULL;
 
         if (lf->fields[FIM_SIZE].value && *lf->fields[FIM_SIZE].value) {
             fprintf(_aflog, " - Size: %s\n", lf->fields[FIM_SIZE].value);
@@ -408,22 +416,29 @@ void OS_Log(Eventinfo *lf)
             fprintf(_aflog, " - Permissions: %s\n", lf->fields[FIM_PERM].value);
         }
 
-        if (lf->mtime_after) {
-            fprintf(_aflog, " - Date: %s", ctime_r(&lf->mtime_after, buf_ptr));
+        if (lf->fields[FIM_MTIME].value && *lf->fields[FIM_MTIME].value) {
+            aux_time = strtol(lf->fields[FIM_MTIME].value, &end, 10);
+            if (aux_time > 0 || end == '\0') {
+                fprintf(_aflog, " - Date: %s", ctime_r(&aux_time, buf_ptr));
+            }
         }
+
         if (lf->inode_after) {
             fprintf(_aflog, " - Inode: %ld\n", lf->inode_after);
         }
+
         if (lf->fields[FIM_UID].value && lf->fields[FIM_UNAME].value) {
             if (*lf->fields[FIM_UNAME].value) {
                 fprintf(_aflog, " - User: %s (%s)\n", lf->fields[FIM_UNAME].value, lf->fields[FIM_UID].value);
             }
         }
+
         if (lf->fields[FIM_GID].value && lf->fields[FIM_GNAME].value) {
             if (*lf->fields[FIM_GNAME].value) {
                 fprintf(_aflog, " - Group: %s (%s)\n", lf->fields[FIM_GNAME].value, lf->fields[FIM_GID].value);
             }
         }
+
         if (lf->fields[FIM_MD5].value) {
             if (strcmp(lf->fields[FIM_MD5].value, "xxx") && *lf->fields[FIM_MD5].value) {
                 fprintf(_aflog, " - MD5: %s\n", lf->fields[FIM_MD5].value);
