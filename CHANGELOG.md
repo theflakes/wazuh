@@ -9,6 +9,12 @@ All notable changes to this project will be documented in this file.
   - Added support for bookmarks in Logcollector, allowing to follow the log file at the point where the agent stopped. ([#3368](https://github.com/wazuh/wazuh/issues/3368))
   - Improved support for multi-line logs with a variable number of lines. ([#5652](https://github.com/wazuh/wazuh/issues/5652))
 
+- **API:**
+  - Added `select` parameter to the `GET /security/users`, `GET /security/roles`, `GET /security/rules` and `GET /security/policies` endpoints. ([#6761](https://github.com/wazuh/wazuh/pull/6761))
+  
+- **Framework:**
+  - Added `select` parameter to `get_users`, `get_roles`, `get_rules` and `get_policies` security functions. ([#6761](https://github.com/wazuh/wazuh/pull/6761))
+
 - **Ruleset:**
   - Added support for UFW firewall to decoders. ([#7100](https://github.com/wazuh/wazuh/pull/7100))
 
@@ -20,25 +26,24 @@ All notable changes to this project will be documented in this file.
   - Let FIM switch to real-time mode for directories where who-data is not available (Audit in immutable mode). ([#6828](https://github.com/wazuh/wazuh/pull/6828))
 
 - **API:**
-  - Added the `select` parameter to the `GET /security/users`, `GET /security/roles`, `GET /security/rules` and `GET /security/policies` endpoints. ([#6761](https://github.com/wazuh/wazuh/pull/6761))
   - Removed ruleset version from `GET /cluster/{node_id}/info` and `GET /manager/info` as it was deprecated. ([#6904](https://github.com/wazuh/wazuh/issues/6904))
   - Changed the `POST /groups` endpoint to specify the group name in a JSON body instead of in a query parameter. ([#6909](https://github.com/wazuh/wazuh/pull/6909))
 
 - **Framework:**
   - Deprecated `update_ruleset` script. ([#6904](https://github.com/wazuh/wazuh/issues/6904))
-  
+
 ### Fixed
 
 - Improved memory usage when creating cluster messages. ([#6736](https://github.com/wazuh/wazuh/pull/6736))
-
-
-### Fixed
 
 - **Core:**
   - Fixed a bug in FIM when setting scan_time to "12am" or "12pm". ([#6934](https://github.com/wazuh/wazuh/pull/6934))
   - Fixed a bug in FIM that produced wrong alerts when the file limit was reached. ([#6802](https://github.com/wazuh/wazuh/pull/6802))
   - Fixed a bug in Analysisd that reserved the static decoder field name "command" but never used it. ([#7105](https://github.com/wazuh/wazuh/pull/7105))
   - Fixed evaluation of fields in the tag `<description>` of rules. ([#7073](https://github.com/wazuh/wazuh/pull/7073))
+
+- **API:**
+  - Fixed a bug when using `sort` parameter with dictionaries type fields. ([#6761](https://github.com/wazuh/wazuh/pull/6761))
 
 
 ## [v4.1.0]
