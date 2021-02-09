@@ -1533,7 +1533,6 @@ static void test_sk_fill_event_full_event(void **state) {
     assert_string_equal(data->lf->fields[FIM_UNAME].value, "uname");
     assert_string_equal(data->lf->fields[FIM_GNAME].value, "gname");
     assert_string_equal(data->lf->fields[FIM_MTIME].value, "2345678");
-    assert_int_equal(data->lf->inode_after, data->sum->inode);
     assert_string_equal(data->lf->fields[FIM_INODE].value, "3456789");
     assert_string_equal(data->lf->fields[FIM_SHA256].value, "sha256");
     assert_string_equal(data->lf->fields[FIM_ATTRS].value, "attributes");
@@ -1571,7 +1570,6 @@ static void test_sk_fill_event_empty_event(void **state) {
     assert_null(data->lf->fields[FIM_UNAME].value);
     assert_null(data->lf->fields[FIM_GNAME].value);
     assert_null(data->lf->fields[FIM_MTIME].value);
-    assert_int_equal(data->lf->inode_after, data->sum->inode);
     assert_null(data->lf->fields[FIM_INODE].value);
     assert_null(data->lf->fields[FIM_SHA256].value);
     assert_null(data->lf->fields[FIM_ATTRS].value);
@@ -1611,7 +1609,6 @@ static void test_sk_fill_event_win_perm(void **state) {
     assert_null(data->lf->fields[FIM_UNAME].value);
     assert_null(data->lf->fields[FIM_GNAME].value);
     assert_null(data->lf->fields[FIM_MTIME].value);
-    assert_int_equal(data->lf->inode_after, data->sum->inode);
     assert_null(data->lf->fields[FIM_INODE].value);
     assert_null(data->lf->fields[FIM_SHA256].value);
     assert_null(data->lf->fields[FIM_ATTRS].value);
