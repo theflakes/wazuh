@@ -198,7 +198,9 @@ void OS_LogOutput(Eventinfo *lf)
         }
 
         if (lf->fields[FIM_MTIME].value && *lf->fields[FIM_MTIME].value) {
-            printf(" - Date: %s", lf->fields[FIM_MTIME].value);
+            long aux_time = atol(lf->fields[FIM_MTIME].value);
+            char buf_ptr[26];
+            printf(" - Date: %s", ctime_r(&aux_time, buf_ptr));
         }
 
         if (lf->fields[FIM_INODE].value && *lf->fields[FIM_INODE].value) {
@@ -402,7 +404,9 @@ void OS_Log(Eventinfo *lf)
         }
 
         if (lf->fields[FIM_MTIME].value && *lf->fields[FIM_MTIME].value) {
-            fprintf(_aflog, " - Date: %s", lf->fields[FIM_MTIME].value);
+            long aux_time = atol(lf->fields[FIM_MTIME].value);
+            char buf_ptr[26];
+            printf(" - Date: %s", ctime_r(&aux_time, buf_ptr));
         }
 
         if (lf->fields[FIM_INODE].value && *lf->fields[FIM_INODE].value) {
