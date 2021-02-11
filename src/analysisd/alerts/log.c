@@ -185,7 +185,7 @@ void OS_LogOutput(Eventinfo *lf)
 
     /* FIM events */
 
-    if (lf->fields && lf->fields[FIM_FILE].value) {
+    if (strcmp(lf->location, SYSCHECK) == 0) {
 
         printf("Attributes:\n");
 
@@ -287,7 +287,7 @@ void OS_LogOutput(Eventinfo *lf)
     }
 
     // Dynamic fields, except for syscheck events
-    if (lf->fields && !lf->fields[FIM_FILE].value) {
+    if (strcmp(lf->location, SYSCHECK) != 0) {
         for (i = 0; i < lf->nfields; i++) {
             if (lf->fields[i].value && *lf->fields[i].value) {
                 printf("%s: %s\n", lf->fields[i].key, lf->fields[i].value);
@@ -392,7 +392,7 @@ void OS_Log(Eventinfo *lf)
 
     /* FIM events */
 
-    if (lf->fields[FIM_FILE].value) {
+    if (strcmp(lf->location, SYSCHECK) == 0) {
         fprintf(_aflog, "Attributes:\n");
 
         if (lf->fields[FIM_SIZE].value && *lf->fields[FIM_SIZE].value) {
@@ -489,7 +489,7 @@ void OS_Log(Eventinfo *lf)
     }
 
     // Dynamic fields, except for syscheck events
-    if (lf->fields && !lf->fields[FIM_FILE].value) {
+    if (strcmp(lf->location, SYSCHECK) != 0) {
         for (i = 0; i < lf->nfields; i++) {
             if (lf->fields[i].value && *lf->fields[i].value) {
                 fprintf(_aflog, "%s: %s\n", lf->fields[i].key, lf->fields[i].value);
