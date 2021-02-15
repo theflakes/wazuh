@@ -3669,6 +3669,11 @@ components:
         </tr>
         <tr>
         <td>monitor</td>
+        <td>global</td>
+        <td><code>&lt;global&gt;</code></td>
+        </tr>
+        <tr>
+        <td>monitor</td>
         <td>internal</td>
         <td><code>&lt;monitord&gt;</code></td>
         </tr>
@@ -3676,6 +3681,11 @@ components:
         <td>monitor</td>
         <td>internal</td>
         <td><code>&lt;reports&gt;</code></td>
+        </tr>
+        <tr>
+        <td>request</td>
+        <td>global</td>
+        <td><code>&lt;global&gt;</code></td>
         </tr>
         <tr>
         <td>request</td>
