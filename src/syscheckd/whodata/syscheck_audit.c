@@ -35,9 +35,11 @@
 #define AUDIT_HEALTHCHECK_FILE AUDIT_HEALTHCHECK_DIR "/audit_hc"
 
 #ifndef WAZUH_UNIT_TESTING
+#define STATIC static
 #define audit_thread_status() ((mode == READING_MODE && audit_thread_active) || \
                                 (mode == HEALTHCHECK_MODE && hc_thread_active))
 #else
+#define STATIC
 #define audit_thread_status() FOREVER()
 #endif
 
@@ -87,13 +89,6 @@ static regex_t regexCompiled_dir_hex;
 static regex_t regexCompiled_syscall;
 static regex_t regexCompiled_dev;
 
-typedef enum audit_key_type {
-    FIM_AUDIT_UNKNOWN_KEY = 0,
-    FIM_AUDIT_KEY,
-    FIM_AUDIT_HC_KEY,
-    FIM_AUDIT_CUSTOM_KEY
-} audit_key_type;
-
 /**
  * @brief Looks for a specific field in an audit event.
  *
@@ -101,10 +96,11 @@ typedef enum audit_key_type {
  * @param key Audit field to look for
  * @return Value of the field specified in key.
  */
-static char *get_audit_field(const char *buffer, const char *key) {
+STATIC char *get_audit_field(const char *buffer, const char *key) {
     char *value = NULL;
     char *start = NULL;
     char *ascii_value = NULL;
+    int is_hex_buffer = 1
     int end = 0;
 
     // Find the key
@@ -115,6 +111,7 @@ static char *get_audit_field(const char *buffer, const char *key) {
     start += strlen(key);
 
     if (*start == '"') {
+        is_hex_buffer = 0;
         start++;
     }
 
@@ -126,12 +123,13 @@ static char *get_audit_field(const char *buffer, const char *key) {
     os_calloc(end + 1, sizeof(char), value);
     strncpy(value, start, end);
 
-    if (ascii_value = decode_hex_buffer_2_ascii_buffer(value, end), ascii_value == NULL) {
-        return value;
+    if (is_hex_buffer) {
+        ascii_value = decode_hex_buffer_2_ascii_buffer(value, end);
+        free(value);
+        return ascii_value;
     }
 
-    free(value);
-    return ascii_value;
+    return value;
 }
 
 /**
@@ -144,7 +142,7 @@ static char *get_audit_field(const char *buffer, const char *key) {
  * @retval FIM_AUDIT_HC_KEY if the key of the event is AUDIT_HEALTHCHECK_KEY.
  * @retval FIM_AUDIT_CUSTOM_KEY if the key of the event is configured using audit_key option.
  */
-static audit_key_type filterkey_audit_events(char *buffer) {
+STATIC audit_key_type filterkey_audit_events(char *buffer) {
     char *save_ptr = NULL;
     char *full_key = NULL;
     char *key = NULL;
@@ -156,23 +154,23 @@ static audit_key_type filterkey_audit_events(char *buffer) {
         return retval;
     }
 
-    if (strcmp(full_key, AUDIT_KEY) == 0) {
-        mdebug2(FIM_AUDIT_MATCH_KEY, full_key);
-        retval = FIM_AUDIT_KEY;
-        goto end;
-    }
-
-    if (strcmp(full_key, AUDIT_HEALTHCHECK_KEY) == 0) {
-        mdebug2(FIM_AUDIT_MATCH_KEY, full_key);
-        retval = FIM_AUDIT_HC_KEY;
-        goto end;
-    }
-
-    key = strtok_r(full_key, "\001", &save_ptr);
-    while (key != NULL) {
+    for (key = strtok_r(full_key, "\001", &save_ptr); key != NULL; key = strtok_r(NULL, "\001", &save_ptr)) {
         if (*key == '\0') {
             continue;
         }
+
+        if (strcmp(key, AUDIT_KEY) == 0) {
+            mdebug2(FIM_AUDIT_MATCH_KEY, full_key);
+            retval = FIM_AUDIT_KEY;
+            goto end;
+        }
+
+        if (strcmp(key, AUDIT_HEALTHCHECK_KEY) == 0) {
+            mdebug2(FIM_AUDIT_MATCH_KEY, full_key);
+            retval = FIM_AUDIT_HC_KEY;
+            goto end;
+        }
+
         for (i = 0; syscheck.audit_key[i]; i++) {
             if (strcmp(key, syscheck.audit_key[i]) == 0) {
                 mdebug2(FIM_AUDIT_MATCH_KEY, key);
@@ -180,7 +178,6 @@ static audit_key_type filterkey_audit_events(char *buffer) {
                 goto end;
             }
         }
-        key = strtok_r(NULL, "\001", &save_ptr);
     }
 end:
     free(full_key);
