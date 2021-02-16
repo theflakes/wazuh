@@ -36,7 +36,7 @@
 extern volatile int audit_health_check_creation;
 extern volatile int hc_thread_active;
 int hc_success = 0;
-
+audit_key_type filterkey_audit_events(char *buffer);
 
 int __wrap_audit_delete_rule(const char *path, const char *key) {
     check_expected(path);
@@ -1077,22 +1077,24 @@ void test_add_audit_rules_syscheck_max(void **state) {
 
 void test_filterkey_audit_events_custom(void **state) {
     (void) state;
-    int ret;
-    char * event = "type=LOGIN msg=audit(1571145421.379:659): pid=16455 uid=0 old-auid=4294967295 auid=0 tty=(none) old-ses=4294967295 ses=57 key=test_key";
+    audit_key_type ret;
+    char * event = "type=LOGIN msg=audit(1571145421.379:659): pid=16455 uid=0 old-auid=4294967295 auid=0 tty=(none) old-ses=4294967295 ses=57 key=\"test_key\"";
     char *key = "test_key";
+    char buff[OS_SIZE_128] = {0};
 
     syscheck.audit_key = calloc(2, sizeof(char *));
     syscheck.audit_key[0] = calloc(strlen(key) + 2, sizeof(char));
     snprintf(syscheck.audit_key[0], strlen(key) + 1, "%s", key);
+    snprintf(buff, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, key);
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"test_key\"'");
+    expect_string(__wrap__mdebug2, formatted_msg, buff);
 
     ret = filterkey_audit_events(event);
 
     free(syscheck.audit_key[0]);
     free(syscheck.audit_key);
 
-    assert_int_equal(ret, 2);
+    assert_int_equal(ret, FIM_AUDIT_CUSTOM_KEY);
 }
 
 
@@ -1104,42 +1106,46 @@ void test_filterkey_audit_events_discard(void **state) {
     syscheck.audit_key[0] = calloc(strlen(key) + 2, sizeof(char));
     snprintf(syscheck.audit_key[0], strlen(key) + 1, "%s", key);
 
-    int ret;
+    audit_key_type ret;
     char * event = "type=LOGIN msg=audit(1571145421.379:659): pid=16455 uid=0 old-auid=4294967295 auid=0 tty=(none) old-ses=4294967295 ses=57 key=\"test_invalid_key\"";
     ret = filterkey_audit_events(event);
 
     free(syscheck.audit_key[0]);
     free(syscheck.audit_key);
 
-    assert_int_equal(ret, 0);
+    assert_int_equal(ret, FIM_AUDIT_UNKNOWN_KEY);
 }
 
 
 void test_filterkey_audit_events_hc(void **state) {
     (void) state;
 
-    int ret;
+    audit_key_type ret;
     char * event = "type=LOGIN msg=audit(1571145421.379:659): pid=16455 uid=0 old-auid=4294967295 auid=0 tty=(none) old-ses=4294967295 ses=57 key=\"wazuh_hc\"";
+    char buff[OS_SIZE_128] = {0};
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_hc\"'");
+    snprintf(buff, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_hc");
+    expect_string(__wrap__mdebug2, formatted_msg, buff);
 
     ret = filterkey_audit_events(event);
 
-    assert_int_equal(ret, 3);
+    assert_int_equal(ret, FIM_AUDIT_HC_KEY);
 }
 
 
 void test_filterkey_audit_events_fim(void **state) {
     (void) state;
 
-    int ret;
+    audit_key_type ret;
     char * event = "type=LOGIN msg=audit(1571145421.379:659): pid=16455 uid=0 old-auid=4294967295 auid=0 tty=(none) old-ses=4294967295 ses=57 key=\"wazuh_fim\"";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     ret = filterkey_audit_events(event);
 
-    assert_int_equal(ret, 1);
+    assert_int_equal(ret, FIM_AUDIT_KEY);
 }
 
 
@@ -1328,7 +1334,9 @@ void test_audit_parse(void **state) {
         type=PROCTITLE msg=audit(1571914029.306:3004254): proctitle=726D0074657374 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_value(__wrap_get_user, uid, 0);
     will_return(__wrap_get_user, strdup("root"));
@@ -1375,7 +1383,12 @@ void test_audit_parse3(void **state) {
         type=PROCTITLE msg=audit(1571914029.306:3004254): proctitle=726D0074657374 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
+
+
+
 
     expect_value(__wrap_get_user, uid, 0);
     will_return(__wrap_get_user, strdup("root"));
@@ -1417,7 +1430,9 @@ void test_audit_parse4(void **state) {
         type=PROCTITLE msg=audit(1571923546.947:3004294): proctitle=6D760066696C655FC3B1002E2E2F74657374C3B1322F66696C655FC3B163 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_value(__wrap_get_user, uid, 0);
     will_return(__wrap_get_user, strdup("root"));
@@ -1474,7 +1489,9 @@ void test_audit_parse_hex(void **state) {
         type=PROCTITLE msg=audit(1571923546.947:3004294): proctitle=6D760066696C655FC3B1002E2E2F74657374C3B1322F66696C655FC3B163 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_value(__wrap_get_user, uid, 0);
     will_return(__wrap_get_user, strdup("root"));
@@ -1526,7 +1543,9 @@ void test_audit_parse_empty_fields(void **state) {
         type=PROCTITLE msg=audit(1571914029.306:3004254): proctitle=726D0074657374 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     audit_parse(buffer);
 }
@@ -1545,8 +1564,10 @@ void test_audit_parse_delete(void **state) {
     syscheck.opts = calloc (2, sizeof(int *));
     syscheck.opts[0] |= WHODATA_ACTIVE;
     syscheck.max_audit_entries = 100;
+    char audit_key_msg[OS_SIZE_128] = {0};
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_string(__wrap__mwarn, formatted_msg, "(6911): Detected Audit rules manipulation: Audit rules removed.");
     expect_string(__wrap__mdebug1, formatted_msg, "(6275): Reloading Audit rules.");
@@ -1601,8 +1622,11 @@ void test_audit_parse_delete_recursive(void **state) {
     syscheck.opts = calloc (2, sizeof(int *));
     syscheck.opts[0] |= WHODATA_ACTIVE;
     syscheck.max_audit_entries = 100;
+    char audit_key_msg[OS_SIZE_128] = {0};
 
-    expect_string_count(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'", 4);
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+
+    expect_string_count(__wrap__mdebug2, formatted_msg, audit_key_msg, 4);
 
     // Audit open
     will_return_always(__wrap_audit_open, 5);
@@ -1667,7 +1691,9 @@ void test_audit_parse_mv(void **state) {
         type=PROCTITLE msg=audit(1571925844.299:3004308): proctitle=6D76002E2F7465737400666F6C646572 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_value(__wrap_get_user, uid, 30);
     will_return(__wrap_get_user, strdup("user30"));
@@ -1713,7 +1739,9 @@ void test_audit_parse_mv_hex(void **state) {
         type=PROCTITLE msg=audit(1571925844.299:3004308): proctitle=6D76002E2F7465737400666F6C646572 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_value(__wrap_get_user, uid, 30);
     will_return(__wrap_get_user, strdup("user30"));
@@ -1757,7 +1785,9 @@ void test_audit_parse_rm(void **state) {
         type=PROCTITLE msg=audit(1571988027.797:3004340): proctitle=726D002D726600666F6C6465722F \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_value(__wrap_get_user, uid, 30);
     will_return(__wrap_get_user, strdup("user30"));
@@ -1798,8 +1828,10 @@ void test_audit_parse_chmod(void **state) {
         type=PATH msg=audit(1571992092.822:3004348): item=0 name=\"/root/test/file\" inode=19 dev=08:02 mode=0100644 ouid=0 ogid=0 rdev=00:00 nametype=NORMAL cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 \
         type=PROCTITLE msg=audit(1571992092.822:3004348): proctitle=63686D6F6400373737002F726F6F742F746573742F66696C65 \
     ";
+    char audit_key_msg[OS_SIZE_128] = {0};
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_value(__wrap_get_user, uid, 99);
     will_return(__wrap_get_user, strdup("user99"));
@@ -1843,8 +1875,10 @@ void test_audit_parse_rm_hc(void **state) {
         type=PATH msg=audit(1571988027.797:3004340): item=2 name=(null) inode=24 dev=08:02 mode=040755 ouid=0 ogid=0 rdev=00:00 nametype=DELETE cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 \
         type=PROCTITLE msg=audit(1571988027.797:3004340): proctitle=726D002D726600666F6C6465722F \
     ";
+    char audit_key_msg[OS_SIZE_128] = {0};
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_hc\"'");
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_hc");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
     expect_string(__wrap__mdebug2, formatted_msg, "(6253): Whodata health-check: Detected file deletion event (263)");
 
     audit_parse(buffer);
@@ -1862,8 +1896,10 @@ void test_audit_parse_add_hc(void **state) {
         type=PATH msg=audit(1571988027.797:3004340): item=2 name=(null) inode=24 dev=08:02 mode=040755 ouid=0 ogid=0 rdev=00:00 nametype=DELETE cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 \
         type=PROCTITLE msg=audit(1571988027.797:3004340): proctitle=726D002D726600666F6C6465722F \
     ";
+    char audit_key_msg[OS_SIZE_128] = {0};
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_hc\"'");
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_hc");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
     expect_string(__wrap__mdebug2, formatted_msg, "(6252): Whodata health-check: Detected file creation event (257)");
 
     audit_parse(buffer);
@@ -1881,8 +1917,10 @@ void test_audit_parse_unknown_hc(void **state) {
         type=PATH msg=audit(1571988027.797:3004340): item=2 name=(null) inode=24 dev=08:02 mode=040755 ouid=0 ogid=0 rdev=00:00 nametype=DELETE cap_fp=0 cap_fi=0 cap_fe=0 cap_fver=0 \
         type=PROCTITLE msg=audit(1571988027.797:3004340): proctitle=726D002D726600666F6C6465722F \
     ";
+    char audit_key_msg[OS_SIZE_128] = {0};
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_hc\"'");
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_hc");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
     expect_string(__wrap__mdebug2, formatted_msg, "(6254): Whodata health-check: Unrecognized event (90)");
 
     audit_parse(buffer);
@@ -1901,7 +1939,9 @@ void test_audit_parse_delete_folder(void **state) {
         type=PROCTITLE msg=audit(1572878838.610:220): proctitle=726D002D72660074657374 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
     expect_string(__wrap__minfo, formatted_msg, "(6027): Monitored directory '/root/test' was removed: Audit rule removed.");
 
     expect_value(__wrap_get_user, uid, 0);
@@ -1954,7 +1994,9 @@ void test_audit_parse_delete_folder_hex(void **state) {
         type=PROCTITLE msg=audit(1572878838.610:220): proctitle=726D002D72660074657374 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
     expect_string(__wrap__minfo, formatted_msg, "(6027): Monitored directory '/root/test/testñ' was removed: Audit rule removed.");
 
     expect_value(__wrap_get_user, uid, 0);
@@ -2009,7 +2051,9 @@ void test_audit_parse_delete_folder_hex3_error(void **state) {
         type=PROCTITLE msg=audit(1572878838.610:220): proctitle=726D002D72660074657374 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_string(__wrap__merror, formatted_msg, "Error found while decoding HEX bufer: '0'");
     expect_string(__wrap__mwarn, formatted_msg, "(6911): Detected Audit rules manipulation: Audit rules removed.");
@@ -2061,7 +2105,9 @@ void test_audit_parse_delete_folder_hex4_error(void **state) {
         type=PROCTITLE msg=audit(1572878838.610:220): proctitle=726D002D72660074657374 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_string(__wrap__merror, formatted_msg, "Error found while decoding HEX bufer: '0'");
     expect_string(__wrap__mwarn, formatted_msg, "(6911): Detected Audit rules manipulation: Audit rules removed.");
@@ -2115,7 +2161,9 @@ void test_audit_parse_delete_folder_hex5_error(void **state) {
         type=PROCTITLE msg=audit(1572878838.610:220): proctitle=726D002D72660074657374 \
     ";
 
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    char audit_key_msg[OS_SIZE_128] = {0};
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_string(__wrap__merror, formatted_msg, "Error found while decoding HEX bufer: '0'");
     expect_string(__wrap__mwarn, formatted_msg, "(6911): Detected Audit rules manipulation: Audit rules removed.");
@@ -2302,6 +2350,7 @@ void test_audit_read_events_select_case_0(void **state) {
     int *audit_sock = *state;
     audit_thread_active = 1;
     errno = EEXIST;
+    char audit_key_msg[OS_SIZE_128] = {0};
     char * buffer = " \
         type=SYSCALL msg=audit(1571914029.306:3004254): arch=c000003e syscall=263 success=yes exit=0 a0=ffffff9c a1=55c5f8170490 a2=0 a3=7ff365c5eca0 items=2 ppid=3211 pid=44082 auid=4294967295 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts3 ses=5 comm=\"test\" exe=\"74657374C3B1\" key=\"wazuh_fim\"\n\
         type=CWD msg=audit(1571914029.306:3004254): cwd=\"/root/test\"\n\
@@ -2322,7 +2371,8 @@ void test_audit_read_events_select_case_0(void **state) {
     will_return(__wrap_recv, buffer);
 
     // In audit_parse()
-    expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
     expect_value(__wrap_get_user, uid, 0);
     will_return(__wrap_get_user, strdup("root"));
@@ -2455,6 +2505,8 @@ void test_audit_read_events_select_success_recv_success(void **state) {
     (void) state;
     int *audit_sock = *state;
     audit_thread_active = 1;
+    char audit_key_msg [OS_SIZE_32] = {0};
+
     errno = EEXIST;
     char * buffer = " \
         type=SYSCALL msg=audit(1571914029.306:3004254): arch=c000003e syscall=263 success=yes exit=0 a0=ffffff9c a1=55c5f8170490 a2=0 a3=7ff365c5eca0 items=2 ppid=3211 pid=44082 auid=4294967295 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=pts3 ses=5 comm=\"test\" exe=\"74657374C3B1\" key=\"wazuh_fim\"\n\
@@ -2483,7 +2535,9 @@ void test_audit_read_events_select_success_recv_success(void **state) {
 
     for (int i = 0; i<2; i++){
         // In audit_parse()
-        expect_string(__wrap__mdebug2, formatted_msg, "(6251): Match audit_key: 'key=\"wazuh_fim\"'");
+
+    snprintf(audit_key_msg, OS_SIZE_128, FIM_AUDIT_MATCH_KEY, "wazuh_fim");
+    expect_string(__wrap__mdebug2, formatted_msg, audit_key_msg);
 
         expect_value(__wrap_get_user, uid, 0);
         will_return(__wrap_get_user, strdup("root"));

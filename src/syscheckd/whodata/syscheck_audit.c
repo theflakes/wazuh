@@ -100,7 +100,7 @@ STATIC char *get_audit_field(const char *buffer, const char *key) {
     char *value = NULL;
     char *start = NULL;
     char *ascii_value = NULL;
-    int is_hex_buffer = 1
+    int is_hex_buffer = 1;
     int end = 0;
 
     // Find the key
