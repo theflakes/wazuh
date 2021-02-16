@@ -547,13 +547,6 @@ int audit_health_check(int audit_socket);
  */
 void clean_rules(void);
 
-/**
- * @brief
- *
- * @param buffer
- * @return 0 if no key is found, 1 if AUDIT_KEY is found, 2 if an existing key is found, 3 if AUDIT_HEALTHCHECK_KEY is found
- */
-int filterkey_audit_events(char *buffer);
 extern W_Vector *audit_added_dirs;
 extern volatile int audit_thread_active;
 extern volatile int whodata_alerts;
