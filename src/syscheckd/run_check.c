@@ -612,7 +612,10 @@ STATIC void fim_link_update(int pos, char *new_path) {
     for (i = 0; syscheck.dir[i] != NULL; i++) {
         if (strcmp(new_path, syscheck.dir[i]) == 0) {
             mdebug1(FIM_LINK_ALREADY_ADDED, syscheck.dir[i]);
+
+            w_mutex_lock(&syscheck.fim_symlink_mutex);
             os_free(syscheck.symbolic_links[pos]);
+            w_mutex_unlock(&syscheck.fim_symlink_mutex);
             return;
         }
     }

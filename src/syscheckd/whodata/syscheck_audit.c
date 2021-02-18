@@ -37,11 +37,12 @@
 // Global variables
 pthread_mutex_t audit_mutex;
 pthread_mutex_t audit_rules_mutex;
+pthread_cond_t audit_db_consistency;
+pthread_cond_t audit_thread_started;
 
 unsigned int count_reload_retries;
 
 //This variable controls if the the modification of the rule is made by syscheck.
-int audit_rule_manipulation = 0;
 
 volatile int audit_db_consistency_flag = 0;
 volatile int audit_thread_active;
@@ -226,7 +227,7 @@ int audit_init(void) {
         return -1;
     }
 
-    if (audit_rules_init() != 0) {
+    if (fim_audit_rules_init() != 0) {
         return -1;
     }
 
@@ -240,7 +241,7 @@ int audit_init(void) {
         minfo(FIM_AUDIT_HEALTHCHECK_DISABLE);
     }
 
-    add_audit_rules_syscheck(true);
+    fim_rules_initial_load();
 
     // Change to realtime directories that don't have any rules when Auditd is in immutable mode
     int auditd_fd = audit_open();
@@ -318,7 +319,6 @@ void * audit_main(int *audit_sock) {
     // Clean regexes used for parsing events
     clean_regex();
     // Change Audit monitored folders to Inotify.
-    w_mutex_lock(&audit_mutex);
     for (pos = 0; syscheck.dir[pos]; pos++) {
         if ((syscheck.opts[pos] & WHODATA_ACTIVE) == 0) {
             continue;
@@ -335,7 +335,6 @@ void * audit_main(int *audit_sock) {
         realtime_adddir(path, 0, (syscheck.opts[pos] & CHECK_FOLLOW) ? 1 : 0);
         free(path);
     }
-    w_mutex_unlock(&audit_mutex);
 
     // Clean Audit added rules.
     clean_rules();
@@ -411,7 +410,7 @@ void audit_read_events(int *audit_sock, int mode) {
             if (*audit_sock >= 0) {
                 minfo(FIM_AUDIT_CONNECT);
                 // Reload rules
-                audit_reload_rules();
+                fim_audit_reload_rules();
                 continue;
             }
             // Send alert

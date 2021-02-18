@@ -526,7 +526,7 @@ void get_parent_process_info(char *ppid, char ** const parent_name, char ** cons
  * This is necessary to include audit rules for hot added directories in the configuration
  *
  */
-void audit_reload_rules(void);
+void fim_audit_reload_rules(void);
 
 /**
  * @brief Parses an audit event and sends the corresponding alert message
