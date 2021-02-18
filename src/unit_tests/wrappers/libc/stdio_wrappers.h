@@ -51,4 +51,6 @@ int __wrap_fgetc(FILE * stream);
 
 int __wrap__fseeki64(FILE *stream, long offset, int whence);
 
+int __wrap_fputc(char character, FILE *stream);
+
 #endif

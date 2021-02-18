@@ -102,215 +102,6 @@ void OS_Store_Flush(){
     fflush(_eflog);
 }
 
-void OS_LogOutput(Eventinfo *lf)
-{
-    int i;
-    char labels[OS_MAXSTR] = {0};
-    char * saveptr = NULL;
-
-#ifdef LIBGEOIP_ENABLED
-    if (Config.geoipdb_file) {
-        if (lf->srcip && !lf->srcgeoip) {
-            lf->srcgeoip = GetGeoInfobyIP(lf->srcip);
-        }
-        if (lf->dstip && !lf->dstgeoip) {
-            lf->dstgeoip = GetGeoInfobyIP(lf->dstip);
-        }
-    }
-#endif
-
-    if (lf->labels && lf->labels[0].key) {
-        format_labels(labels, OS_MAXSTR, lf);
-    } else {
-        labels[0] = '\0';
-    }
-
-    printf(
-        "** Alert %ld.%ld:%s - %s\n"
-        "%d %s %02d %s %s%s%s\n%sRule: %d (level %d) -> '%s'"
-        "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
-        (long int)lf->time.tv_sec,
-        __crt_ftell,
-        lf->generated_rule->alert_opts & DO_MAILALERT ? " mail " : "",
-        lf->generated_rule->group,
-        lf->year,
-        lf->mon,
-        lf->day,
-        lf->hour,
-        lf->location[0] != '(' ? lf->hostname : "",
-        lf->location[0] != '(' ? "->" : "",
-        lf->location,
-        labels,
-        lf->generated_rule->sigid,
-        lf->generated_rule->level,
-        lf->comment,
-
-        lf->srcip == NULL ? "" : "\nSrc IP: ",
-        lf->srcip == NULL ? "" : lf->srcip,
-
-#ifdef LIBGEOIP_ENABLED
-        lf->srcgeoip == NULL ? "" : "\nSrc Location: ",
-        lf->srcgeoip == NULL ? "" : lf->srcgeoip,
-#else
-        "",
-        "",
-#endif
-
-
-
-        lf->srcport == NULL ? "" : "\nSrc Port: ",
-        lf->srcport == NULL ? "" : lf->srcport,
-
-        lf->dstip == NULL ? "" : "\nDst IP: ",
-        lf->dstip == NULL ? "" : lf->dstip,
-
-#ifdef LIBGEOIP_ENABLED
-        lf->dstgeoip == NULL ? "" : "\nDst Location: ",
-        lf->dstgeoip == NULL ? "" : lf->dstgeoip,
-#else
-        "",
-        "",
-#endif
-
-
-
-        lf->dstport == NULL ? "" : "\nDst Port: ",
-        lf->dstport == NULL ? "" : lf->dstport,
-
-        lf->dstuser == NULL ? "" : "\nUser: ",
-        lf->dstuser == NULL ? "" : lf->dstuser,
-
-        lf->generated_rule->alert_opts & NO_FULL_LOG ? "" : "\n",
-        lf->generated_rule->alert_opts & NO_FULL_LOG ? "" : lf->full_log);
-
-    /* FIM events */
-
-    if (strcmp(lf->location, SYSCHECK) == 0) {
-
-        printf("Attributes:\n");
-
-        if (lf->fields[FIM_SIZE].value && *lf->fields[FIM_SIZE].value != '\0') {
-            printf(" - Size: %s\n", lf->fields[FIM_SIZE].value);
-        }
-
-        if (lf->fields[FIM_PERM].value && *lf->fields[FIM_PERM].value != '\0') {
-            printf(" - Permissions: %s\n", lf->fields[FIM_PERM].value);
-        }
-
-        if (lf->fields[FIM_MTIME].value && *lf->fields[FIM_MTIME].value != '\0') {
-            long aux_time = atol(lf->fields[FIM_MTIME].value);
-            char buf_ptr[26];
-            printf(" - Date: %s", ctime_r(&aux_time, buf_ptr));
-        }
-
-        if (lf->fields[FIM_INODE].value && *lf->fields[FIM_INODE].value != '\0') {
-            printf(" - Inode: %s\n", lf->fields[FIM_INODE].value);
-        }
-
-        if (lf->fields[FIM_UID].value && lf->fields[FIM_UNAME].value && *lf->fields[FIM_UNAME].value != '\0') {
-            printf(" - User: %s (%s)\n", lf->fields[FIM_UNAME].value, lf->fields[FIM_UID].value);
-        }
-
-        if (lf->fields[FIM_GID].value && lf->fields[FIM_GNAME].value && *lf->fields[FIM_GNAME].value != '\0') {
-            printf(" - Group: %s (%s)\n", lf->fields[FIM_GNAME].value, lf->fields[FIM_GID].value);
-        }
-
-        if (lf->fields[FIM_MD5].value && strcmp(lf->fields[FIM_MD5].value, "xxx") && *lf->fields[FIM_MD5].value != '\0') {
-            printf(" - MD5: %s\n", lf->fields[FIM_MD5].value);
-        }
-
-        if (lf->fields[FIM_SHA1].value && strcmp(lf->fields[FIM_SHA1].value, "xxx") && *lf->fields[FIM_SHA1].value != '\0') {
-            printf(" - SHA1: %s\n", lf->fields[FIM_SHA1].value);
-        }
-
-        if (lf->fields[FIM_SHA256].value && strcmp(lf->fields[FIM_SHA256].value, "xxx") && *lf->fields[FIM_SHA256].value != '\0') {
-            printf(" - SHA256: %s\n", lf->fields[FIM_SHA256].value);
-        }
-
-        if (lf->fields[FIM_ATTRS].value && *lf->fields[FIM_ATTRS].value != '\0') {
-            printf(" - File attributes: %s\n", lf->fields[FIM_ATTRS].value);
-        }
-
-        if (lf->fields[FIM_USER_NAME].value && *lf->fields[FIM_USER_NAME].value != '\0') {
-            printf(" - (Audit) %s: %s\n", "User name", lf->fields[FIM_USER_NAME].value);
-        }
-
-        if (lf->fields[FIM_AUDIT_NAME].value && *lf->fields[FIM_AUDIT_NAME].value != '\0') {
-            printf(" - (Audit) %s: %s\n", "Audit name", lf->fields[FIM_AUDIT_NAME].value);
-        }
-
-        if (lf->fields[FIM_EFFECTIVE_NAME].value && *lf->fields[FIM_EFFECTIVE_NAME].value != '\0') {
-            printf(" - (Audit) %s: %s\n", "Effective name", lf->fields[FIM_EFFECTIVE_NAME].value);
-        }
-
-        if (lf->fields[FIM_GROUP_NAME].value && *lf->fields[FIM_GROUP_NAME].value != '\0') {
-            printf(" - (Audit) %s: %s\n", "Group name", lf->fields[FIM_GROUP_NAME].value);
-        }
-
-        if (lf->fields[FIM_PROC_ID].value && *lf->fields[FIM_PROC_ID].value != '\0') {
-            printf(" - (Audit) %s: %s\n", "Process id", lf->fields[FIM_PROC_ID].value);
-        }
-
-        if (lf->fields[FIM_PROC_NAME].value && *lf->fields[FIM_PROC_NAME].value != '\0') {
-            printf(" - (Audit) %s: %s\n", "Process name", lf->fields[FIM_PROC_NAME].value);
-        }
-
-        if (lf->fields[FIM_AUDIT_CWD].value && *lf->fields[FIM_AUDIT_CWD].value != '\0') {
-            printf(" - (Audit) %s: %s\n", "Process cwd", lf->fields[FIM_AUDIT_CWD].value);
-        }
-
-        if (lf->fields[FIM_PROC_PNAME].value && *lf->fields[FIM_PROC_PNAME].value != '\0') {
-            printf(" - (Audit) %s: %s\n", "Parent process name", lf->fields[FIM_PROC_PNAME].value);
-        }
-
-        if (lf->fields[FIM_PPID].value && *lf->fields[FIM_PPID].value != '\0') {
-            printf(" - (Audit) %s: %s\n", "Parent process id", lf->fields[FIM_PPID].value);
-        }
-
-        if (lf->fields[FIM_AUDIT_PCWD].value && *lf->fields[FIM_AUDIT_PCWD].value != '\0') {
-            printf(" - (Audit) %s: %s\n", "Parent process cwd", lf->fields[FIM_AUDIT_PCWD].value);
-        }
-
-        if (lf->fields[FIM_DIFF].value && *lf->fields[FIM_DIFF].value != '\0') {
-            fprintf(_aflog, "\nWhat changed:\n%s\n", lf->fields[FIM_DIFF].value);
-        }
-
-        if (lf->fields[FIM_TAG].value && *lf->fields[FIM_TAG].value != '\0') {
-            printf("\nTags:\n");
-            char * tag;
-            tag = strtok_r(lf->fields[FIM_TAG].value, ",", &saveptr);
-            while (tag != NULL) {
-                printf(" - %s\n", tag);
-                tag = strtok_r(NULL, ",", &saveptr);
-            }
-        }
-    }
-
-    // Dynamic fields, except for syscheck events
-    if (strcmp(lf->location, SYSCHECK) != 0) {
-        for (i = 0; i < lf->nfields; i++) {
-            if (lf->fields[i].value && *lf->fields[i].value) {
-                printf("%s: %s\n", lf->fields[i].key, lf->fields[i].value);
-            }
-        }
-    }
-
-    /* Print the last events if present */
-    if (lf->last_events) {
-        char **lasts = lf->last_events;
-        while (*lasts) {
-            printf("%s\n", *lasts);
-            lasts++;
-        }
-    }
-
-    printf("\n");
-
-
-    fflush(stdout);
-    return;
-}
-
 void OS_Log(Eventinfo *lf)
 {
     int i;
@@ -393,7 +184,7 @@ void OS_Log(Eventinfo *lf)
     /* FIM events */
 
     if (strcmp(lf->location, SYSCHECK) == 0) {
-        fprintf(_aflog, "Attributes:\n");
+        fwrite("Attributes:\n", 13, 1, _aflog);
 
         if (lf->fields[FIM_SIZE].value && *lf->fields[FIM_SIZE].value != '\0') {
             fprintf(_aflog, " - Size: %s\n", lf->fields[FIM_SIZE].value);
@@ -406,7 +197,7 @@ void OS_Log(Eventinfo *lf)
         if (lf->fields[FIM_MTIME].value && *lf->fields[FIM_MTIME].value != '\0') {
             long aux_time = atol(lf->fields[FIM_MTIME].value);
             char buf_ptr[26];
-            printf(" - Date: %s", ctime_r(&aux_time, buf_ptr));
+            fprintf(_aflog, " - Date: %s", ctime_r(&aux_time, buf_ptr));
         }
 
         if (lf->fields[FIM_INODE].value && *lf->fields[FIM_INODE].value != '\0') {
@@ -476,7 +267,7 @@ void OS_Log(Eventinfo *lf)
             if (strcmp(lf->fields[FIM_TAG].value, "") != 0) {
                 char * tags;
                 os_strdup(lf->fields[FIM_TAG].value, tags);
-                fprintf(_aflog, "\nTags:\n");
+                fwrite("\nTags:\n", 8, 1, _aflog);
                 char * tag;
                 tag = strtok_r(tags, ",", &saveptr);
                 while (tag != NULL) {
@@ -506,7 +297,7 @@ void OS_Log(Eventinfo *lf)
         }
     }
 
-    fprintf(_aflog, "\n");
+    fputc('\n', _aflog);
 
     return;
 }
