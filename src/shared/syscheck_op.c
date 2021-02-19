@@ -1356,7 +1356,7 @@ cJSON *win_perm_to_json(char *perms) {
             }
         }
         if (next_it) {
-            break;
+            continue;
         }
 
         if (!user_obj) {
