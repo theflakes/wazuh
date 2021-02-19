@@ -136,6 +136,7 @@ analysisd_stats = os.path.join(ossec_path, 'var', 'run', 'wazuh-analysisd.state'
 remoted_stats = os.path.join(ossec_path, 'var', 'run', 'wazuh-remoted.state')
 lists_path = os.path.join(ossec_path, 'etc', 'lists')
 ar_conf_path = os.path.join(ossec_path, 'etc', 'shared', 'ar.conf')
+default_rbac_resources = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'rbac', 'default')
 
 # Queues
 ARQUEUE = os.path.join(ossec_path, 'queue', 'alerts', 'ar')
