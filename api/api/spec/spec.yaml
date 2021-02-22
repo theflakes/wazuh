@@ -8797,7 +8797,7 @@ paths:
                           type: string
               example:
                 data:
-                  contents: '<!-- Local rules -->\n\n<!-- Modify it at your will. -->\n<!-- Copyright (C) 2015-2019,
+                  contents: '<!-- Local rules -->\n\n<!-- Modify it at your will. -->\n<!-- Copyright (C) 2015-2021,
                   Wazuh Inc. -->\n\n<!-- Example -->\n<group name=\"local,syslog,sshd,\">\n\n  <!--\n  Dec 10 01:02:02
                   host sshd[1234]: Failed none for root from 1.1.1.1 port 1066 ssh2\n -->\n  <rule id=\"100001\"
                   level=\"5\">\n    <if_sid>5716</if_sid>\n    <srcip>1.1.1.1</srcip>\n    <description>sshd:
@@ -10167,7 +10167,7 @@ paths:
                             type: string
               example:
                 data:
-                  contents: '<!-- Local rules -->\n\n<!-- Modify it at your will. -->\n<!-- Copyright (C) 2015-2019,
+                  contents: '<!-- Local rules -->\n\n<!-- Modify it at your will. -->\n<!-- Copyright (C) 2015-2021,
                   Wazuh Inc. -->\n\n<!-- Example -->\n<group name=\"local,syslog,sshd,\">\n\n  <!--\n  Dec 10 01:02:02
                   host sshd[1234]: Failed none for root from 1.1.1.1 port 1066 ssh2\n -->\n  <rule id=\"100001\"
                   level=\"5\">\n    <if_sid>5716</if_sid>\n    <srcip>1.1.1.1</srcip>\n
@@ -11047,7 +11047,7 @@ paths:
                   -  Rules config
                   -  Author: Daniel Cid.
                   -  Updated by Wazuh, Inc.
-                  -  Copyright (C) 2015-2020, Wazuh Inc.
+                  -  Copyright (C) 2015-2021, Wazuh Inc.
                   -  Copyright (C) 2009 Trend Micro Inc.
                   -  This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2.
                 -->
@@ -11670,7 +11670,7 @@ paths:
               example: |
                   <!--
                   - JSON Decoders
-                  - Copyright (C) 2015-2020, Wazuh Inc.
+                  - Copyright (C) 2015-2021, Wazuh Inc.
                   - April 21, 2017.
                   -
                   - This program is a free software; you can redistribute it
